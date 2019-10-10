@@ -1,6 +1,4 @@
-#Trabalho 1
-Simulador de um Sistema Detector de Incêndios
-Florestais:
+# Trabalho 1: Simulador de um Sistema Detector de Incêndios Florestais
  
 Data de Entrega: 31/10/2019.
 Grupo: Gustavo Rocha Flores.
