@@ -21,7 +21,10 @@ int main(){
         for(int j=0;j<30;j++){
     		if(j == next_col && i == next_lin)
     		{
-    			field[i][j] = 'T';
+    			if(i==1 || j==1 || i==28 || j==28)
+    				field[i][j] = 't';
+    			else
+    				field[i][j] = 'T';
     			next_col += 3;
     		}
         }
@@ -78,4 +81,3 @@ int main(){
     }
     printf("Sem combustível...\n");
 }
-
