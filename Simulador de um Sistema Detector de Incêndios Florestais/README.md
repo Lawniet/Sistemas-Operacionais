@@ -4,9 +4,12 @@
 - Grupo: 
   - Gustavo Rocha Flores
   - Lauany Reis da Silva
+  
+  
+  ## Especificações do Trabalho
+  
 - Linguagem de programação a ser utilizada: C padrão.
 - Sistema Operacional de teste: Linux.
-
 - Usar preferencialmente o pacote pthreads;
 - Cuidado ao realizar as comunicações entre threads (garanta a
 exclusão mútua);
