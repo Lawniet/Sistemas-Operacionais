@@ -20,22 +20,11 @@ struct itens {
 int main(){
     srand(time(0));
     int n,r,c,l;
-    int next_lin = 1, next_col = 1;
+    int next_lin = 1, next_col = 1, cont_id = 0;
     int fuel = 100;
     char field[30][30];
     struct itens item[30][30];
-    
-    for(int i=0;i<30;i++){
-        for(int j=0;j<30;j++){
-        	field[i][j] = '*';
-        	item[i][j].id = 0;
-        	item[i][j].position_x = i;
-        	item[i][j].position_y = j;
-        	item[i][j].status = 0;
-        	item[i][j].color = ANSI_COLOR_GREEN;
-        	item[i][j].msg = "a" ;
-        }
-    }
+
     for(int i=0;i<30;i++){
     	next_col = 1;
         for(int j=0;j<30;j++){
@@ -44,7 +33,7 @@ int main(){
     			if(i==1 || j==1 || i==28 || j==28)
     			{
     				field[i][j] = 'T';
-					item[i][j].id = i+j;
+					item[i][j].id = cont_id;
 		        	item[i][j].position_x = i;
 		        	item[i][j].position_y = j;
 		        	item[i][j].status = 2;
@@ -54,7 +43,7 @@ int main(){
     			else
     			{
     				field[i][j] = 'T';
-    				item[i][j].id = i+j;
+    				item[i][j].id = cont_id;
 		        	item[i][j].position_x = i;
 		        	item[i][j].position_y = j;
 		        	item[i][j].status = 1;
@@ -62,6 +51,17 @@ int main(){
 		        	item[i][j].msg = "c" ;
     			}
     			next_col += 3;
+    			cont_id++;
+    		}
+    		else
+    		{
+    			field[i][j] = '*';
+	        	item[i][j].id = -1;
+	        	item[i][j].position_x = i;
+	        	item[i][j].position_y = j;
+	        	item[i][j].status = 0;
+	        	item[i][j].color = ANSI_COLOR_GREEN;
+	        	item[i][j].msg = "a" ;
     		}
         }
     	if (i == next_lin)
@@ -113,7 +113,7 @@ int main(){
             for(int i=0;i<30;i++){
                 printf("%-5d",i);
                 for(int j=0;j<30;j++){
-                    printf("%-3s",item[i][j].msg);            
+                    printf("%-3d",item[i][j].id);            
                 }
                 printf("\n");
             }
