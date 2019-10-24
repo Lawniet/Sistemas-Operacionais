@@ -6,11 +6,11 @@
 #define true 1
 #define clear() printf("\e[2J\e[H")
 /* Cores em ANSI utilizadas */
-#define ANSI_COLOR_RED     	"\x1b[31m" 
-#define ANSI_COLOR_GRAY    	"\e[037m"
-#define ANSI_COLOR_DARK_GRAY 	"\e[130m"
-#define ANSI_COLOR_GREEN	"\e[032m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RED       "\033[31;1;41m"
+#define ANSI_COLOR_GRAY      "\033[30;1;40m"
+#define ANSI_COLOR_YELLOW     "\033[33;1;43m"
+#define ANSI_COLOR_GREEN    "\033[32;1;42m"
+#define ANSI_COLOR_RESET  "\033[0m"
 
 struct itens {
 	int id, position_x, position_y, status;
