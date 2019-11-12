@@ -16,7 +16,7 @@
 ## Compilação do código fonte
 
 - Para ofecer maior comodidade no processo de compilação elaboramos um arquivo de Makefile, o qual pode ser compilado através do comando "make -B sai";
-- Opcionalmente também fornecemos um código de limpeza de fila de mensagens a fim de evitar erros gerados pelo uso da técnica de IPC, podendo ser executado pelo comando "make -B destroy";
+- Opcionalmente também fornecemos um código de limpeza de fila de mensagens a fim de evitar erros gerados pelo uso da técnica de IPC. O arquivo msgget_destroy.c pode ser executado pelo comando "make -B destroy";
 
 ## Funcionamento do código  
 
