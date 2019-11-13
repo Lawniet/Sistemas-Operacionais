@@ -41,3 +41,5 @@
 	Como já foi dito, cada sensor é uma thread, sendo elas trabalhando de forma paralela para detectar o fogo. Cada thread é criada a partir da função monitoramento, passando como parâmetro as coordenadas da thread e sua id, que é usada para criar sua fila de mensagem. Uma thread termina seu funcionamento quando é destruida pelo fogo, quando o tal acontece em cima deste, e mesmo ao terminar, sua fila de mensagem ainda continua ativa, a fim de evitar problemas de falha de segmentação.
 - Mutex:
 	Para garantir a execução sem problemas de sobreescrita, é feita uma região exclusiva para as threads que querem ler e escrever nas filas de mensagem, interrompendo as outras threads nessa etapa de execução, assim somente aquela thread irá realizar o tal ato.
+	
+	Para maiores informações sobre o código e atuzlizações acesse: https://github.com/Lawniet/Sistemas-Operacionais/edit/master/Simulador%20de%20um%20Sistema%20Detector%20de%20Inc%C3%AAndios%20Florestais
