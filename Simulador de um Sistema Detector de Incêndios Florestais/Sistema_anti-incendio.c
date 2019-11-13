@@ -1,3 +1,4 @@
+/** Bibliotecas **/
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -10,39 +11,57 @@
 #include <sys/wait.h>
 #include <sys/shm.h>
 #include <string.h>
-/* Defines*/
+/** Defines **/
 #define THREADS_MAX 100
 #define MSG_SIZE_TEXT 256
 #define true 1
 #define clear() printf("\e[2J\e[H")
-/* Cores em ANSI utilizadas */
+/* Cores em ANSI utilizadas nos sistemas Unix*/
 #define ANSI_COLOR_RED          "\033[31;1;41m"
 #define ANSI_COLOR_GRAY         "\033[30;1;40m"
 #define ANSI_COLOR_YELLOW       "\033[33;1;43m"
 #define ANSI_COLOR_GREEN        "\033[32;1;42m"
 #define ANSI_COLOR_RESET        "\033[0m"
+/** Variável externa **/
 extern int errno;
+/** Structs **/
 /* Estrutura com dados a serem usados no mapa florestal*/
 typedef struct itens{
-    int id, position_x, position_y, status;
-    char *color, *msg;
+    int id, status;
+    char *color, msg;
 }itens;
 //itens item[30][30];
 /* Estrutura com dados a serem usados no monitoramento das threads*/
 typedef struct {
 int id, posX, posY, status;
 }thread_arg, *ptr_thread_arg;
-/* Vetor com todas threads utilizadas ao longo do código*/
-pthread_t threads[THREADS_MAX];
-/*Variáveis para criação e uso do Mutex, semáforo binário*/
-int counter;
-pthread_mutex_t lock;
 /* Estrutura de dados da mensagem das filas*/
 typedef struct {
     long mtype;
     char mtext[MSG_SIZE_TEXT];
 } msgtext;
 struct msqid_ds buf;
+/** Variáveis globais **/
+/* Vetor com todas threads utilizadas ao longo do código*/
+pthread_t threads[THREADS_MAX];
+/*Variáveis para criação e uso do Mutex, semáforo binário*/
+int counter;
+pthread_mutex_t lock;
+int count_threads = THREADS_MAX;
+const char OUTPUT_FILE[]="incedios.log";
+
+void gera_log(char *msg){
+	FILE *pont_arq;
+	pont_arq = fopen(OUTPUT_FILE,"a");
+
+	if(pont_arq ==NULL){
+		printf("Erro na abertura do arquivo");
+		//return 1;
+	}
+	fprintf(pont_arq, "%s", msg);
+	fclose(pont_arq);
+} 
+/** Funções **/
 /*Função para criação do índice da matrix
     Parâmetros de entrada: 
     m -> matrix a ser utilizda; 
@@ -51,16 +70,17 @@ struct msqid_ds buf;
 void create_index(void **m, int rows, int cols, size_t sizeElement){
     int i;  
     size_t sizeRow = (cols * sizeElement);//ajuste do tamanho da linha
-    m[0] = m+rows;//???
+    m[0] = m+rows;//Elemento inicial como ponteiro para as próximas linhas
     for(i=1; i<rows; i++){      
         m[i] = (m[i-1]+sizeRow);//inicialização da matrix
     }
 }
-
-/*Função de monitoramento do sensor
-Parâmetros de entrada: 
-    threadid -> info da thread;  
-    posX e posY -> respectivas posições em x e y do sensor informante*/
+/*Função para obtenção do menor caminho até o elemento da matrix
+    Parâmetros de entrada: 
+    posX e posY-> Coordenadas X e Y de elemento de foco; 
+    st1, st2, st3, st4 -> Status das threads vizinhas, caso alguma esteja des_
+	truída ela ajustará o cálculo; 
+*/
 int least_path(int posX, int posY, int st1, int st2, int st3, int st4){
 	int least = 30;
 	int pos = 0;
@@ -75,6 +95,9 @@ int least_path(int posX, int posY, int st1, int st2, int st3, int st4){
 	}
 	return pos;
 }
+/*Função de monitoramento do sensor
+Parâmetros de entrada: 
+    param -> mapa florestal; */
 void *monitoramento(void *param){
 	ptr_thread_arg targ = (ptr_thread_arg)param;
 	int threadid = targ->id, posX = targ->posX, posY = targ->posY;
@@ -117,10 +140,6 @@ void *monitoramento(void *param){
     sleep(5);
     int exit_status = 0;
     while(true){
-		/*Bloqueio da região crítica*/
-		//pthread_mutex_lock(&lock);
-		//counter = idthread;
-		//printf ("Bloqueio para a thread %d(%d,%d)\n", counter,posX,posY);
     	if(posX==1||posX==28||posY==1||posY==28){
 			for(int i=posX-1;i<=posX+1;i++){
 		       for(int j=posY-1;j<=posY+1;j++){
@@ -128,11 +147,18 @@ void *monitoramento(void *param){
 						//printf("Fogo detectado por %d(%d,%d) em (%d,%d)\n", idthread, posX, posY, i, j);
 						msgtext msg;
 						msg.mtype = 1;
-						sprintf(msg.mtext,"%d",(((i*30)+j)+idthread*1000)+1000000);
+						struct tm * ti;
+						time_t vertempo;
+						time(&vertempo);
+						ti = localtime(&vertempo);
+						long int tempo = (ti->tm_hour*3600)+(ti->tm_min*60)+(ti->tm_sec);
+						sprintf(msg.mtext,"%ld",((i*30)+j)+(idthread*1000)+(tempo*1000000)+100000000000);
 						//printf("%s\n",msg.mtext);
 						//printf("Recebido: %s\n",msg.mtext);
-        				pthread_mutex_lock(&lock);
-        				counter = idthread;
+						/*Bloqueio da região crítica*/
+						pthread_mutex_lock(&lock);
+						//printf ("Bloqueio para a thread %d\n", idthread);
+						/*Envio da mensagem de alerta pelo IPC*/
 						if(msgsnd(msqid_main,&msg,strlen(msg.mtext),IPC_NOWAIT) == -1){
 							fprintf(stderr,"3: Thread %d Envio de mensagem impossivel: %s\n", idthread, strerror(errno));
 							exit(1);
@@ -160,8 +186,10 @@ void *monitoramento(void *param){
 	        long type = 1;
 	        int size_msg = 20;
 	        msgtext msg;
-        	pthread_mutex_lock(&lock);
-        	counter = idthread;
+        	/*Bloqueio da região crítica*/
+			pthread_mutex_lock(&lock);
+			//printf ("Bloqueio para a thread %d\n", idthread);
+			/*Recebimento da mensagem de alerta pelo IPC*/
 	        while((lg = msgrcv(msqid,&msg,size_msg,type,IPC_NOWAIT|MSG_NOERROR)) != -1){
 	        	//printf("Thread %d: Recebido: %s\n",idthread,msg.mtext);
 	            if(msgsnd(msqid_main,&msg,strlen(msg.mtext),IPC_NOWAIT) == -1){
@@ -178,12 +206,21 @@ void *monitoramento(void *param){
 						//printf("Fogo detectado por %d(%d,%d) em (%d,%d)\n", idthread, posX, posY, i, j);
 						msgtext msg;
 						msg.mtype = 1;
-						sprintf(msg.mtext,"%d",(((i*30)+j)+idthread*1000)+1000000);
+						struct tm * ti;
+						time_t vertempo;
+						time(&vertempo);
+						ti = localtime(&vertempo);
+						long int tempo = (ti->tm_hour*3600)+(ti->tm_min*60)+(ti->tm_sec);
+						sprintf(msg.mtext,"%ld",((i*30)+j)+(idthread*1000)+(tempo*1000000)+100000000000);
 						//printf("%s\n",msg.mtext);
+						//printf("Recebido: %s\n",msg.mtext);
+						/*Bloqueio da região crítica*/
 						pthread_mutex_lock(&lock);
-						counter = idthread;
+						//printf ("Bloqueio para a thread %d\n", idthread);
+						/*Envio da mensagem de alerta pelo IPC*/
 						//for(int k=0;k<4;k++){
 							int msqid_t;
+							/*Busca do menor caminho para envio da mensagem até a central*/
 							int k = least_path(posX,posY,item[posX-3][posY].status,item[posX][posY-3].status,item[posX+3][posY].status,item[posX][posY+3].status);
 							if((msqid_t = msgget(pos[k],0)) == -1 ){
 		                        fprintf(stderr,"5: Thread %d: Erro msgget(): %s\n", idthread,  strerror(errno));
@@ -200,7 +237,7 @@ void *monitoramento(void *param){
 								exit(1);
 							}*/
 						//}
-						
+						/*Desbloqueio da região crítica*/
 						pthread_mutex_unlock(&lock);
 						if(i==posX && j==posY){
 							exit_status = 1;
@@ -212,8 +249,9 @@ void *monitoramento(void *param){
 	        long type = 1;
 	        int size_msg = 20;
 	        msgtext msg;
-	        pthread_mutex_lock(&lock);
-        	counter = idthread;
+	        /*Bloqueio da região crítica*/
+			pthread_mutex_lock(&lock);
+			//printf ("Bloqueio para a thread %d\n", idthread);
 	        while((lg = msgrcv(msqid,&msg,size_msg,type,IPC_NOWAIT|MSG_NOERROR)) != -1){
 	        	//printf("Thread %d: Recebido: %s\n",idthread,msg.mtext);
 	            //for(int i=0;i<4;i++){
@@ -233,6 +271,7 @@ void *monitoramento(void *param){
 					}*/
             	//}
 	        }
+			/*Desbloqueio da região crítica*/
 	        pthread_mutex_unlock(&lock);
 		}
 		//sleep(1);
@@ -241,6 +280,9 @@ void *monitoramento(void *param){
 		//pthread_mutex_unlock(&lock);
 		if(exit_status == 1){
 			printf("Thread %d foi destruida pelo fogo!\n",idthread);
+			/*Passível de log*/
+			printf("Total de threads ativas: %d\n",--count_threads);
+			
 			break;
 		}
     }
@@ -262,15 +304,16 @@ void *monitoramento(void *param){
 		exit(1);
 	}*/
 }
-/*Função para direcionamento da thread para o monitoramento
+/*Função de bombeiro
 Parâmetros de entrada: 
-    param -> valor do identificador*/
-/*void *return_thread(void *param){
-	ptr_thread_arg targ = (ptr_thread_arg)param;
-	//printf("Thread n %d, de id %d: (%d - %d)\n", pthread_self(), targ->id,targ->posX, targ->posY);
-	monitoramento(targ->id,targ->posX, targ->posY);
-    //pthread_exit(NULL);
-}*/
+    item -> mapa florestal
+	posX e posY -> Coordenadas X e Y	
+*/
+void bombeiro(itens **item, int posX, int posY){
+	item[posX][posY].msg = '*';
+    item[posX][posY].color = ANSI_COLOR_GREEN;
+    item[posX][posY].status = 0;
+}
 
 int main(){
     srand(time(0));
@@ -279,9 +322,10 @@ int main(){
     int fuel = 100;
     int idshm1,idshm2;
     int pid, erro = 0;
-    char field[30][30];
+    //char field[30][30];
     itens **item;
 	thread_arg arguments[THREADS_MAX];
+	char txt_log[100];
 	
 	if (pthread_mutex_init(&lock, NULL) != 0)
     {
@@ -316,16 +360,14 @@ int main(){
             if(j == next_col && i == next_lin){
                 if(i==1 || j==1 || i==28 || j==28){
                     item[i][j].status = 2;
-                    item[i][j].msg = "b" ;
+                    //item[i][j].msg = "b" ;
                 }
                 else{
                     item[i][j].status = 1;
-                    item[i][j].msg = "c" ;
+                    //item[i][j].msg = "c" ;
                 }
-                field[i][j] = 'T';
+                item[i][j].msg = 'T';//former field
                 item[i][j].id = cont_id;
-                item[i][j].position_x = i;
-                item[i][j].position_y = j;
                 item[i][j].color = ANSI_COLOR_GRAY ;
 
 				arguments[cont_id].posX = i;
@@ -340,13 +382,11 @@ int main(){
                 cont_id++;
             }
             else{
-                field[i][j] = '*';
+                item[i][j].msg = '*';//former field
                 item[i][j].id = -1;
-                item[i][j].position_x = i;
-                item[i][j].position_y = j;
                 item[i][j].status = 0;
                 item[i][j].color = ANSI_COLOR_GREEN;
-                item[i][j].msg = "a";
+                //item[i][j].msg = "a";
             }
         }
         if (i == next_lin)
@@ -367,15 +407,23 @@ int main(){
         int size_msg = 20;
     	while(true){
     		while((lg = msgrcv(msqid,&msg,size_msg,type,IPC_NOWAIT|MSG_NOERROR)) != -1){
-                int num = atoi(msg.mtext)%1000000;
+                //char *p; strtoull(msg.mtext,p,10)
+                long int num = atol(msg.mtext)%100000000000;
+                int tempo = num/1000000;
+                num = num%1000000;
                 int id = num/1000;
                 int pos = num%1000;
                 int l = pos/30, c = pos%30;
-                printf("Central: fogo em (%d,%d) detectado pela thread %d.\n",l,c,id);
-                field[l][c] = '*';
-		        item[l][c].msg = "a";
-		        item[l][c].color = ANSI_COLOR_GREEN;
-		        item[l][c].status = 0;
+                int h = tempo/3600;
+                int m = (tempo%3600)/60;
+                int s = (tempo%3600)%60;
+
+				sprintf(txt_log, "Central: fogo em (%d,%d) detectado pela thread %d as %d%s%d%s%d.\n",l,c,id,h,m<10?":0":":",m,s<10?":0":":",s);
+				printf("%s", txt_log);
+				gera_log(txt_log);
+				printf("Bombeiro acionado para (%d,%d), obrigado thread %d.\n",l,c,id);
+				bombeiro(item, l, c);
+                //field[l][c] = '*';
             }
     	}
 	}else{
@@ -393,8 +441,8 @@ int main(){
 		        c = n/30;
 		        l = n%30;
 		        printf("em (%d,%d)!",c,l);
-		        field[c][l] = '@';
-		        item[c][l].msg = "f" ;
+		        //field[c][l] = '@';
+		        item[c][l].msg = '@';
 		        item[c][l].color = ANSI_COLOR_RED ;
 		        item[c][l].status = -1;
 		        /*Trecho de alastre de incêndio*/
@@ -406,13 +454,16 @@ int main(){
 		            for(int i=0;i<r1;i++){
 		                fuel-=1;
 		                r = rand() % 9;
-		                field[c-(r/3)+1][l-(r%3)+1] = '@';
-		                item[c-(r/3)+1][l-(r%3)+1].msg = "f" ;
+		                item[c-(r/3)+1][l-(r%3)+1].msg = '@';//former field
+		                //item[c-(r/3)+1][l-(r%3)+1].msg = "f" ;
 		                item[c-(r/3)+1][l-(r%3)+1].color = ANSI_COLOR_RED;
 		                item[c-(r/3)+1][l-(r%3)+1].status = -1;
 		            }
 		        }
-		        printf(" - combustível restante: %d\n",fuel);
+		        if(fuel > 0)
+		        	printf(" - combustível restante: %d\n",fuel);
+		        else
+		        	printf(" - combustível restante: 0\n");
 		        for(int i=0;i<30;i++){
 		            if(i==0)
 		                printf("%7d",i);
@@ -431,7 +482,7 @@ int main(){
 		        for(int i=0;i<30;i++){
 		            printf("%-5d",i);
 		            for(int j=0;j<30;j++){
-		                printf("%s%2d %s",item[i][j].color,item[i][j].status, ANSI_COLOR_RESET);//field[i][j]
+		                printf("%s%2c %s",item[i][j].color,item[i][j].msg, ANSI_COLOR_RESET);//field[i][j]
 		            }
 		            printf("\n");
 		        }
@@ -455,6 +506,7 @@ int main(){
 			exit(1);
 		}
 	}
+	/* Junção das threads com retorno nulo*/
 	for(int i=0; i<THREADS_MAX; i++){
 		pthread_join(threads[i], NULL);
 	}
