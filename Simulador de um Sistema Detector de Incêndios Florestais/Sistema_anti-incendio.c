@@ -50,7 +50,10 @@ pthread_mutex_t lock;
 int count_threads = THREADS_MAX;
 char txt_log[100];
 const char OUTPUT_FILE[]="incedios.log";
-
+/** Funções **/
+/*Função para criação do arquivo de log incendios.log
+    Parâmetros de entrada: 
+    msg -> mensagem do foco de incendio enviada da central para o bombeiro*/
 void gera_log(char *msg){
 	FILE *pont_arq;
 	pont_arq = fopen(OUTPUT_FILE,"a");
@@ -62,7 +65,6 @@ void gera_log(char *msg){
 	fprintf(pont_arq, "%s", msg);
 	fclose(pont_arq);
 } 
-/** Funções **/
 /*Função para criação do índice da matrix
     Parâmetros de entrada: 
     m -> matrix a ser utilizda; 
