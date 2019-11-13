@@ -48,6 +48,7 @@ pthread_t threads[THREADS_MAX];
 int counter;
 pthread_mutex_t lock;
 int count_threads = THREADS_MAX;
+char txt_log[100];
 const char OUTPUT_FILE[]="incedios.log";
 
 void gera_log(char *msg){
@@ -281,7 +282,9 @@ void *monitoramento(void *param){
 		if(exit_status == 1){
 			printf("Thread %d foi destruida pelo fogo!\n",idthread);
 			/*Passível de log*/
-			printf("Total de threads ativas: %d\n",--count_threads);
+			sprintf(txt_log,"\nAlerta de thread destruida!!! Total de threads ativas: %d\n",--count_threads);
+				printf("%s", txt_log);
+				gera_log(txt_log);
 			
 			break;
 		}
@@ -325,7 +328,6 @@ int main(){
     //char field[30][30];
     itens **item;
 	thread_arg arguments[THREADS_MAX];
-	char txt_log[100];
 	
 	if (pthread_mutex_init(&lock, NULL) != 0)
     {
