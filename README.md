@@ -23,7 +23,9 @@ Trabalho apresentado ao Professor [João Victor de Araujo Oliveira](https://www.
 
 ## Funcionamento do código  
 
-	O código é dividido em etapas, as quais podem ser enumeradas:
+O código é dividido em etapas, as quais podem ser enumeradas:
+
+```markdown
 - Plantio do campo e criação das threads sensores:
 	A matriz que será palco dos incêndios é feita por uma struct com as informações da cor do fundo, o caracter representativo e o estatus, sendo 0 para normal, 1 para thread de centro, 2 para thread de borda, -1 para fogo e -2 para fogo reportado pelas threads. No loop de criação, as threads são criadas passado informações das coordenadas e a id da thread pela função monitoramento, responsável em escanear o campo.
 - Os sensores, as threads:
@@ -31,6 +33,7 @@ Trabalho apresentado ao Professor [João Victor de Araujo Oliveira](https://www.
 - Central e o incêndio:
 	Em seguida, é feito um fork() no programa main, o processo filho será a central, o pai é quem taca fogo. A central é responsável em receber as mensagens enviadas pelos sensores, a qual contém o número que foi criado pelas threads, recuperadas realizando as devidas operações de recuperação das informações. Com o par de coordenadas em mão, é despachado uma função de bombeiro, que irá apagar o fogo, substituindo as informações de de status, mensagem e fundo da matriz.
 	Assim, faz-se o fogo. O método de incêndio é feita de forma aleatória, além de que há uma chance do fogo ocorrer ou não. Como um dado de vinte lados(d20), é tirado um número, se for maior ou igual a 10, então um programa tira um local onde ocorrerá o fogo, de forma aleatória. Além disso, há uma chance pequena do fogo espalhar ainda mais do que em apenas uma coordenada. Lançando novamente o d20, se for maior ou igual a 15, o programa decidirá quantos quadrados em volta da coordenada a qual o fogo irá se alastrar. Foi imposta um limite no fogo, que somente irá continuar acontecendo desde que haja combustivél para o ato, começando com 100 cargas, se chegar à 0, o programa termina, mas que pode aumentar conforme o tempo, quando ocorrer fogo, é consumido uma carga, ao lastre, é consmido 3 cargas, mas se não houver fogo, é acrescentado uma carga.
+ ```
  
 ## Implementação do sistema
 
