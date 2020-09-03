@@ -1,5 +1,5 @@
 # Sistemas Operacionais
-Trabalho apresentado ao Professor [João Victor de Araujo Oliveira](https://www.linkedin.com/in/jo%C3%A3o-victor-de-araujo-oliveira-7b06aaba/?originalSubdomain=br) como requisito parcial para obtenção de nota parcial na disciplina de Sistemas Operacionais. Repositório criado para armazenar os códigos do trabalho.
+Trabalho apresentado ao Professor [João Victor de Araujo Oliveira](https://www.linkedin.com/in/jo%C3%A3o-victor-de-araujo-oliveira-7b06aaba/?originalSubdomain=br) como requisito parcial para obtenção de nota na disciplina de Sistemas Operacionais. Repositório criado para armazenar os códigos do trabalho.
 
 # Trabalho 1: Simulador de um Sistema Detector de Incêndios Florestais
  
